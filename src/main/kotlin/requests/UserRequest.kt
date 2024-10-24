@@ -1,3 +1,11 @@
 package ru.shvetsov.todoList.requests
 
-data class UserRequest()
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class UserRequest(
+    val id: Int? = null,
+    val login: String,
+    val password: String,
+    val salt: String
+)
