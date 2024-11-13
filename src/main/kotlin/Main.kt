@@ -42,7 +42,7 @@ fun Application.module() {
     val issuer = environment.config.property("ktor.jwt.issuer").getString()
 
     val jwtService = JwtService(secret, issuer)
-    val passwordEncryptor = PasswordEncryptor(algorithm, transformation, keySize, gcmTagLength, ivSize, secretKey)
+    val passwordEncryptor = PasswordEncryptor(secretKey)
     val userService = UserService(passwordEncryptor)
 
     configureSecurity(userService, jwtService)

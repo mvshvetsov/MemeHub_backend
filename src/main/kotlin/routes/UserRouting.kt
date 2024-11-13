@@ -98,7 +98,7 @@ fun Route.userRouting(
 
             val userResponse = UserResponse(
                 login = user!!.login,
-                password = passwordEncryptor.encryptPassword(user.password),
+                password = passwordEncryptor.encryptPassword(user.password, passwordEncryptor.secretKeySpec),
                 username = user.username,
                 profilePicture = "http://${BASE_URL}:${BASE_PORT}/profile-pictures/${user.profilePicture}"
             )

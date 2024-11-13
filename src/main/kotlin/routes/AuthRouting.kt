@@ -64,7 +64,7 @@ fun Route.authRouting(
                 call.respond(HttpStatusCode.NotFound, BaseResponse(false, "User not found"))
                 return@post
             }
-            if (passwordEncryptor.decryptPassword(user.password) != loginRequest.password) {
+            if (passwordEncryptor.decryptPassword(user.password, passwordEncryptor.secretKeySpec) != loginRequest.password) {
                 call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Incorrect password"))
                 return@post
             } else {

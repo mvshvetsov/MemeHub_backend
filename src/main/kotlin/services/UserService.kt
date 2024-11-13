@@ -14,7 +14,7 @@ class UserService(
     private val passwordEncryptor: PasswordEncryptor
 ) {
     suspend fun addUser(user: UserModel) {
-        val hashPassword = passwordEncryptor.encryptPassword(user.password)
+        val hashPassword = passwordEncryptor.encryptPassword(user.password, passwordEncryptor.secretKeySpec)
         dbQuery {
             UsersTable.insert { table ->
                 table[login] = user.login
