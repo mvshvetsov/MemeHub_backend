@@ -5,19 +5,22 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ru.shvetsov.todoList.models.UserModel
 import ru.shvetsov.todoList.models.tables.UsersTable
 import ru.shvetsov.todoList.plugins.DatabaseFactory.dbQuery
+import ru.shvetsov.todoList.responses.UserResponse
+import ru.shvetsov.todoList.utils.constants.Constants.BASE_PORT
+import ru.shvetsov.todoList.utils.constants.Constants.BASE_URL
 import ru.shvetsov.todoList.utils.security.PasswordEncryptor
 
 class UserService(
     private val passwordEncryptor: PasswordEncryptor
 ) {
     suspend fun addUser(user: UserModel) {
-        val generatedSalt = passwordEncryptor.generateSalt()
-        val hashPassword = passwordEncryptor.hashPassword(user.password, generatedSalt)
+        val hashPassword = passwordEncryptor.encryptPassword(user.password)
         dbQuery {
             UsersTable.insert { table ->
                 table[login] = user.login
+                table[username] = user.username
                 table[password] = hashPassword
-                table[salt] = generatedSalt
+                table[profilePicture] = user.profilePicture
             }
         }
     }
@@ -32,6 +35,7 @@ class UserService(
         dbQuery {
             UsersTable.update({ UsersTable.id eq user.id }) { table ->
                 table[login] = user.login
+                table[username] = user.username
                 table[password] = user.password
             }
         }
@@ -53,6 +57,32 @@ class UserService(
         }
     }
 
+    suspend fun getUserByUsername(username: String): UserModel? {
+        return dbQuery {
+            UsersTable.selectAll().where { UsersTable.username eq username }
+                .mapNotNull { rowToUserModel(it) }
+                .singleOrNull()
+        }
+    }
+
+    suspend fun uploadProfilePicture(id: Int, photo: String): UserResponse? {
+        dbQuery {
+            UsersTable.update({ UsersTable.id eq id }) { table ->
+                table[profilePicture] = photo
+            }
+        }
+
+        val user = getUserById(id)
+        return user?.let {
+            UserResponse(
+                login = it.login,
+                password = it.password,
+                username = it.username,
+                profilePicture = "http://$BASE_URL:$BASE_PORT/profile-pictures/$photo"
+            )
+        }
+    }
+
     private fun rowToUserModel(row: ResultRow?): UserModel? {
         if (row == null) {
             return null
@@ -60,8 +90,9 @@ class UserService(
         return UserModel(
             id = row[UsersTable.id],
             login = row[UsersTable.login],
+            username = row[UsersTable.username],
             password = row[UsersTable.password],
-            salt = row[UsersTable.salt]
+            profilePicture = row[UsersTable.profilePicture].toString()
         )
     }
 }

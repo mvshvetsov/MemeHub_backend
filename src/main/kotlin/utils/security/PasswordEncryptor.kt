@@ -2,35 +2,46 @@ package ru.shvetsov.todoList.utils.security
 
 import java.security.SecureRandom
 import java.util.*
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
+import javax.crypto.Cipher
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class PasswordEncryptor(
-    private val saltLength: Int,
-    private val hashIterators: Int,
-    private val keyLength: Int,
-    private val algorithm: String
+    algorithm: String,
+    private val transformation: String,
+    private val keySize: Int,
+    private val gcmTagLength: Int,
+    private val ivSize: Int,
+    secretKeyEnv: String
 ) {
 
-    fun generateSalt(): String {
-        val salt = ByteArray(saltLength)
-        SecureRandom().nextBytes(salt)
-        return Base64.getEncoder().encodeToString(salt)
+    private var secretKey: SecretKey = SecretKeySpec(secretKeyEnv.toByteArray(), algorithm)
+
+    fun encryptPassword(password: String): String {
+        val cipher = Cipher.getInstance(transformation)
+        val iv = ByteArray(ivSize)
+        SecureRandom().nextBytes(iv)
+        val ivSpec = GCMParameterSpec(gcmTagLength * 8, iv)
+
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
+        val encryptedBytes = cipher.doFinal(password.toByteArray())
+
+        val ivAndEncrypted = iv + encryptedBytes
+        return Base64.getEncoder().encodeToString(ivAndEncrypted)
     }
 
-    fun hashPassword(password: String, salt: String): String {
-        val spec = PBEKeySpec(
-            password.toCharArray(),
-            Base64.getDecoder().decode(salt),
-            hashIterators, keyLength
-        )
-        val factory = SecretKeyFactory.getInstance(algorithm)
-        val hash = factory.generateSecret(spec).encoded
-        return Base64.getEncoder().encodeToString(hash)
-    }
+    fun decryptPassword(encryptedPassword: String): String {
+        val ivAndEncrypted = Base64.getDecoder().decode(encryptedPassword)
 
-    fun verifyPassword(password: String, salt: String, hashedPassword: String): Boolean {
-        val generatedHash = hashPassword(password, salt)
-        return generatedHash == hashedPassword
+        val iv = ivAndEncrypted.sliceArray(0 until ivSize)
+        val encryptedBytes = ivAndEncrypted.sliceArray(ivSize until ivAndEncrypted.size)
+
+        val cipher = Cipher.getInstance(transformation)
+        val ivSpec = GCMParameterSpec(gcmTagLength * 8, iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+        val decryptedBytes = cipher.doFinal(encryptedBytes)
+        return String(decryptedBytes)
     }
 }

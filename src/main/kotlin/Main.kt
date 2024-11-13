@@ -10,6 +10,8 @@ import ru.shvetsov.todoList.plugins.configureRouting
 import ru.shvetsov.todoList.plugins.configureSecurity
 import ru.shvetsov.todoList.plugins.configureSerialization
 import ru.shvetsov.todoList.services.UserService
+import ru.shvetsov.todoList.utils.constants.Constants.BASE_PORT
+import ru.shvetsov.todoList.utils.constants.Constants.BASE_URL
 import ru.shvetsov.todoList.utils.jwt.JwtService
 import ru.shvetsov.todoList.utils.security.PasswordEncryptor
 
@@ -20,8 +22,8 @@ fun main() {
         },
         configure = {
             connector {
-                port = 8080
-                host = "localhost"
+                port = BASE_PORT.toInt()
+                host = BASE_URL
             }
         },
         module = Application::module
@@ -29,16 +31,18 @@ fun main() {
 }
 
 fun Application.module() {
-    val saltLength = environment.config.property("ktor.encryption.saltLength").getString().toInt()
-    val hashIterators = environment.config.property("ktor.encryption.hashIterators").getString().toInt()
-    val keyLength = environment.config.property("ktor.encryption.keyLength").getString().toInt()
     val algorithm = environment.config.property("ktor.encryption.algorithm").getString()
+    val transformation = environment.config.property("ktor.encryption.transformation").getString()
+    val keySize = environment.config.property("ktor.encryption.keySize").getString().toInt()
+    val gcmTagLength = environment.config.property("ktor.encryption.gcmTagLength").getString().toInt()
+    val ivSize = environment.config.property("ktor.encryption.ivSize").getString().toInt()
+    val secretKey = environment.config.property("ktor.encryption.secretKey").getString()
 
     val secret = environment.config.property("ktor.jwt.secret").getString()
     val issuer = environment.config.property("ktor.jwt.issuer").getString()
 
     val jwtService = JwtService(secret, issuer)
-    val passwordEncryptor = PasswordEncryptor(saltLength, hashIterators, keyLength, algorithm)
+    val passwordEncryptor = PasswordEncryptor(algorithm, transformation, keySize, gcmTagLength, ivSize, secretKey)
     val userService = UserService(passwordEncryptor)
 
     configureSecurity(userService, jwtService)

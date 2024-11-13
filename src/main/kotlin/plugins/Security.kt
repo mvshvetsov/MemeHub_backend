@@ -13,8 +13,8 @@ fun Application.configureSecurity(userService: UserService, jwtService: JwtServi
             realm = "Service Server"
             validate {
                 val payload = it.payload
-                val login = payload.getClaim("email").asString()
-                val user = userService.getUserByLogin(login = login)
+                val id = payload.getClaim("id").asInt()
+                val user = userService.getUserById(id = id)
                 user
             }
         }

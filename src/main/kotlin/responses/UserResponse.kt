@@ -1,12 +1,11 @@
-package ru.shvetsov.todoList.models
+package ru.shvetsov.todoList.responses
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserModel (
-    val id: Int,
+data class UserResponse (
     val login: String,
-    val username: String,
     val password: String,
+    val username: String,
     val profilePicture: String
 )

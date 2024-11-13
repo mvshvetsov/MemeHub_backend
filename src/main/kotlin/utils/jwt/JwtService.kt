@@ -12,8 +12,8 @@ class JwtService(private val secret: String, private val issuer: String) {
     fun generateToken(user: UserModel): String {
         return JWT.create()
             .withIssuer(issuer)
-            .withClaim("login", user.login)
-            .withExpiresAt(LocalDateTime.now().plusDays(1).toInstant(ZoneOffset.UTC))
+            .withClaim("id", user.id)
+            .withExpiresAt(LocalDateTime.now().plusMinutes(1).toInstant(ZoneOffset.UTC))
             .sign(Algorithm.HMAC256(secret))
     }
 
