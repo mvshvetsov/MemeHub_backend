@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.shvetsov.todoList.models.tables.UsersTable
+import ru.shvetsov.todoList.models.tables.VideosTable
 
 object DatabaseFactory {
 
@@ -32,7 +33,7 @@ object DatabaseFactory {
         Database.connect(datasource = dataSource)
 
         transaction {
-            SchemaUtils.create(UsersTable)
+            SchemaUtils.create(UsersTable, VideosTable)
         }
     }
 

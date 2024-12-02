@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ru.shvetsov.todoList.models.UserModel
 import ru.shvetsov.todoList.models.tables.UsersTable
 import ru.shvetsov.todoList.plugins.DatabaseFactory.dbQuery
+import ru.shvetsov.todoList.requests.UpdateUserRequest
 import ru.shvetsov.todoList.responses.UserResponse
 import ru.shvetsov.todoList.utils.constants.Constants.BASE_PORT
 import ru.shvetsov.todoList.utils.constants.Constants.BASE_URL
@@ -31,12 +32,12 @@ class UserService(
         }
     }
 
-    suspend fun updateUser(user: UserModel) {
+    suspend fun updateUser(userId: Int, updateUserRequest: UpdateUserRequest) {
         dbQuery {
-            UsersTable.update({ UsersTable.id eq user.id }) { table ->
-                table[login] = user.login
-                table[username] = user.username
-                table[password] = user.password
+            UsersTable.update({ UsersTable.id eq userId }) { table ->
+                updateUserRequest.username?.let { table[username] = it }
+                updateUserRequest.login?.let { table[login] = it }
+                updateUserRequest.password?.let { table[password] = passwordEncryptor.encryptPassword(it, passwordEncryptor.secretKeySpec) }
             }
         }
     }

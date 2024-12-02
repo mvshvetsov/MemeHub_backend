@@ -39,9 +39,6 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
 kotlin {
     jvmToolchain(21)
 }

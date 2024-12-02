@@ -7,6 +7,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import ru.shvetsov.todoList.requests.UpdateUserRequest
+import ru.shvetsov.todoList.responses.BaseResponse
 import ru.shvetsov.todoList.responses.UserResponse
 import ru.shvetsov.todoList.services.UserService
 import ru.shvetsov.todoList.utils.constants.Constants.BASE_PORT
@@ -19,29 +21,6 @@ fun Route.userRouting(
 ) {
 
     authenticate("jwt") {
-//        post("/update-user") {
-//            val userRequest = call.receiveNullable<UserRequest>() ?: kotlin.run {
-//                call.respond(HttpStatusCode.BadRequest)
-//                return@post
-//            }
-//
-//            try {
-//                if (checkUserExist(userService, userRequest.id!!)) {
-//                    val user = UserModel(
-//                        id = userRequest.id,
-//                        login = userRequest.login,
-//                        username = userRequest.username,
-//                        password = userRequest.password,
-//                        salt = userRequest.salt
-//                    )
-//
-//                    userService.updateUser(user = user)
-//                    call.respond(HttpStatusCode.OK)
-//                }
-//            } catch (e: Exception) {
-//                call.respond(HttpStatusCode.BadRequest)
-//            }
-//        }
 
         delete("/delete-user") {
             val userRequest = call.request.queryParameters["id"]?.toInt() ?: kotlin.run {
@@ -98,11 +77,33 @@ fun Route.userRouting(
 
             val userResponse = UserResponse(
                 login = user!!.login,
-                password = passwordEncryptor.encryptPassword(user.password, passwordEncryptor.secretKeySpec),
+                password = passwordEncryptor.decryptPassword(user.password, passwordEncryptor.secretKeySpec),
                 username = user.username,
                 profilePicture = "http://${BASE_URL}:${BASE_PORT}/profile-pictures/${user.profilePicture}"
             )
             call.respond(HttpStatusCode.OK, userResponse)
+        }
+
+        patch("/user/update") {
+            val userId = call.request.queryParameters["id"]?.toInt()
+            val updatedRequest = call.receive<UpdateUserRequest>()
+
+            try {
+                val existingUserByLogin = userService.getUserByLogin(updatedRequest.login.toString())
+                if (existingUserByLogin != null) {
+                    call.respond(HttpStatusCode.Conflict, BaseResponse(false, "User with login already exist"))
+                    return@patch
+                }
+                val existingUserByUsername = userService.getUserByUsername(updatedRequest.username.toString())
+                if (existingUserByUsername != null) {
+                    call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Username is already taken"))
+                    return@patch
+                }
+                userService.updateUser(userId!!, updatedRequest)
+                call.respond(HttpStatusCode.OK, BaseResponse(true, "Information updated successfully"))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Failed to update user information: ${e.message}"))
+            }
         }
     }
 }

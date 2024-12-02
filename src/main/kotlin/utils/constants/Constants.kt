@@ -1,7 +1,9 @@
 package ru.shvetsov.todoList.utils.constants
 
-object Constants {
+import io.ktor.server.engine.*
 
-    const val BASE_URL = "192.168.1.111"
-    const val BASE_PORT = "8080"
+object Constants {
+    private val environment = CommandLineConfig(arrayOf())
+    val BASE_URL = environment.environment.config.property("ktor.deployment.host").getString()
+    val BASE_PORT = environment.environment.config.property("ktor.deployment.port").getString().toInt()
 }

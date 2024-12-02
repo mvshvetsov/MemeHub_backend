@@ -45,7 +45,7 @@ fun Route.authRouting(
             }
             if (user.login.isNotBlank() && user.password.isNotBlank()) {
                 userService.addUser(user = user)
-                call.respond(HttpStatusCode.OK, BaseResponse(true, "Successful"))
+                call.respond(HttpStatusCode.OK, BaseResponse(true, "Success"))
             }
         } catch (e: Exception) {
             call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Something went wrong"))
@@ -71,7 +71,7 @@ fun Route.authRouting(
                 call.respond(HttpStatusCode.OK, LoginResponse(true, user.id, jwtService.generateToken(user)))
             }
         } catch (e: Exception) {
-            call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Xuy"))
+            call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Something went wrong"))
         }
     }
 }
