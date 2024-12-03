@@ -1,10 +1,9 @@
-package ru.shvetsov.todoList.models
+package ru.shvetsov.todoList.responses
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class VideoModel(
-    val id: Int,
+data class ProfileVideoResponse(
     val userId: Int,
     val description: String,
     val tag: String,

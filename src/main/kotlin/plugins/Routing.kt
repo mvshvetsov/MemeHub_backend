@@ -18,7 +18,8 @@ fun Application.configureRouting(userService: UserService, jwtService: JwtServic
         authRouting(userService, jwtService, passwordEncryptor)
         userRouting(userService, passwordEncryptor)
         staticFiles("/profile-pictures", File("src/photo"))
-        staticFiles("/upload/video", File("src/video"))
+        staticFiles("/user/videos", File("src/video"))
+        staticFiles("/thumbnail", File("src/thumbnail"))
         videoRouting(videoService)
     }
 }

@@ -9,6 +9,7 @@ object VideosTable : Table() {
     val description: Column<String> = varchar("description", 100)
     val tag: Column<String> = varchar("tag", 20)
     val videoUrl: Column<String> = varchar("video_url", 100)
+    val thumbnailUrl: Column<String> = varchar("thumbnail_url", 100)
 
     override val primaryKey = PrimaryKey(id)
 }

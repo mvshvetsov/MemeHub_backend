@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import ru.shvetsov.todoList.models.VideoModel
 import ru.shvetsov.todoList.requests.VideoRequest
 import ru.shvetsov.todoList.responses.BaseResponse
+import ru.shvetsov.todoList.responses.ProfileVideoResponse
 import ru.shvetsov.todoList.services.VideoService
 
 fun Route.videoRouting(
@@ -21,6 +22,7 @@ fun Route.videoRouting(
         post("upload/video") {
             val multipart = call.receiveMultipart()
             var videoUrl: String? = null
+            var thumbnailUrl: String? = null
             var videoRequest: VideoRequest? = null
 
             multipart.forEachPart { part ->
@@ -37,19 +39,18 @@ fun Route.videoRouting(
                             val fileName = "video_${System.currentTimeMillis()}.mp4"
                             videoUrl = part.save("src/video", fileName)
                         }
+                        if (part.name == "thumbnail") {
+                            val fileName = "thumbnail_${System.currentTimeMillis()}.jpg"
+                            thumbnailUrl = part.save("src/thumbnail", fileName)
+                        }
                     }
                     else -> Unit
                 }
                 part.dispose()
             }
 
-            if (videoRequest == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing videoRequest")
-                return@post
-            }
-
-            if (videoUrl == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing video")
+            if (videoRequest == null || videoUrl == null || thumbnailUrl == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing data")
                 return@post
             }
 
@@ -58,11 +59,26 @@ fun Route.videoRouting(
                 userId = videoRequest!!.userId,
                 description = videoRequest!!.description,
                 tag = videoRequest!!.tag,
-                videoUrl = videoUrl!!
+                videoUrl = videoUrl!!,
+                thumbnailUrl = thumbnailUrl!!
             )
 
             videoService.addVideo(video)
             call.respond(HttpStatusCode.OK, BaseResponse(true, "Video upload successfully"))
+        }
+
+        get("/user/videos") {
+            val userId = call.parameters["user_id"]?.toInt()
+            if (userId == null) {
+                call.respond(HttpStatusCode.BadRequest, BaseResponse(false, "Invalid user ID"))
+                return@get
+            }
+            try {
+                val profileVideos = videoService.getVideosByUserId(userId)
+                call.respond(HttpStatusCode.OK, profileVideos)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Failed to retrieve videos"))
+            }
         }
     }
 }
