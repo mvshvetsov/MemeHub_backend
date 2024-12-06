@@ -1,9 +1,9 @@
 package ru.shvetsov.todoList.services
 
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import ru.shvetsov.todoList.models.VideoModel
+import ru.shvetsov.todoList.models.tables.UsersTable
+import ru.shvetsov.todoList.models.VideoWithUserInfoModel
 import ru.shvetsov.todoList.models.tables.VideosTable
 import ru.shvetsov.todoList.plugins.DatabaseFactory.dbQuery
 import ru.shvetsov.todoList.utils.constants.Constants.BASE_PORT
@@ -23,30 +23,80 @@ class VideoService {
         }
     }
 
-    suspend fun getVideosByUserId(userId: Int): List<VideoModel> {
+    suspend fun getVideosByUserId(userId: Int): List<VideoWithUserInfoModel> {
         return dbQuery {
-            VideosTable.selectAll().where { VideosTable.user_id eq userId }
-                .mapNotNull { rowToVideoModel(it) }
+            (VideosTable innerJoin UsersTable)
+                .select(
+                    VideosTable.description,
+                    VideosTable.tag,
+                    VideosTable.videoUrl,
+                    VideosTable.thumbnailUrl,
+                    UsersTable.username,
+                    UsersTable.profilePicture
+                )
+                .where { UsersTable.id eq VideosTable.user_id and(VideosTable.user_id eq userId) }
+                .mapNotNull { rowToVideoWithUserModel(it) }
         }
     }
 
-    private fun rowToVideoModel(row: ResultRow?): VideoModel? {
+    suspend fun getRandomVideos(): List<VideoWithUserInfoModel> {
+        return dbQuery {
+            (VideosTable innerJoin UsersTable)
+                .select(
+                    VideosTable.description,
+                    VideosTable.tag,
+                    VideosTable.videoUrl,
+                    VideosTable.thumbnailUrl,
+                    UsersTable.username,
+                    UsersTable.profilePicture
+                )
+                .where { UsersTable.id eq VideosTable.user_id }
+                .orderBy(Random())
+                .limit(10)
+                .mapNotNull { rowToVideoWithUserModel(it) }
+        }
+    }
+
+    private fun rowToVideoWithUserModel(row: ResultRow?): VideoWithUserInfoModel? {
         if (row == null) {
             return null
         }
+
         val videoUrl = row[VideosTable.videoUrl]
         val thumbnailUrl = row[VideosTable.thumbnailUrl]
+        val profilePicture = row[UsersTable.profilePicture]
 
         val fullVideoUrl = "http://$BASE_URL:$BASE_PORT/user/videos/$videoUrl"
         val fullThumbnailUrl = "http://$BASE_URL:$BASE_PORT/thumbnail/$thumbnailUrl"
+        val fullProfilePictureUrl = "http://$BASE_URL:$BASE_PORT/profile-pictures/$profilePicture"
 
-        return VideoModel(
-            id = row[VideosTable.id],
-            userId = row[VideosTable.user_id],
+        return VideoWithUserInfoModel(
             description = row[VideosTable.description],
             tag = row[VideosTable.tag],
             videoUrl = fullVideoUrl,
-            thumbnailUrl = fullThumbnailUrl
+            thumbnailUrl = fullThumbnailUrl,
+            username = row[UsersTable.username],
+            profilePicture = fullProfilePictureUrl
         )
     }
+
+    //    private fun rowToVideoModel(row: ResultRow?): VideoModel? {
+//        if (row == null) {
+//            return null
+//        }
+//        val videoUrl = row[VideosTable.videoUrl]
+//        val thumbnailUrl = row[VideosTable.thumbnailUrl]
+//
+//        val fullVideoUrl = "http://$BASE_URL:$BASE_PORT/user/videos/$videoUrl"
+//        val fullThumbnailUrl = "http://$BASE_URL:$BASE_PORT/thumbnail/$thumbnailUrl"
+//
+//        return VideoModel(
+//            id = row[VideosTable.id],
+//            userId = row[VideosTable.user_id],
+//            description = row[VideosTable.description],
+//            tag = row[VideosTable.tag],
+//            videoUrl = fullVideoUrl,
+//            thumbnailUrl = fullThumbnailUrl
+//        )
+//    }
 }

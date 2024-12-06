@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import ru.shvetsov.todoList.models.VideoModel
 import ru.shvetsov.todoList.requests.VideoRequest
 import ru.shvetsov.todoList.responses.BaseResponse
-import ru.shvetsov.todoList.responses.ProfileVideoResponse
 import ru.shvetsov.todoList.services.VideoService
 
 fun Route.videoRouting(
@@ -79,6 +78,11 @@ fun Route.videoRouting(
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Failed to retrieve videos"))
             }
+        }
+
+        get("/videos") {
+            val randomVideos = videoService.getRandomVideos()
+            call.respond(HttpStatusCode.OK, randomVideos)
         }
     }
 }
